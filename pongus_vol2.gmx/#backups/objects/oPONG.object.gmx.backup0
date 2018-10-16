@@ -1,0 +1,100 @@
+// 2018-10-17 01:55:55
+#event create
+enum ePONG
+{
+    none = 0,
+    title,
+    game,
+    results
+}
+
+// This is the game state
+gameState = ePONG.title;
+gameCtr = 0;
+
+// Play area attributes
+tableX = room_width / 2;
+tableY = room_height / 2;
+tableVX = 0;
+tableVY = 0;
+tableWid = 800;
+tableHei = 600;
+tableSurf = surface_create(tableWid, tableHei);
+
+// Paddles attributes
+paddleMargin = 84;
+paddleWid = 32;
+paddleLen = 128;
+
+// p1
+p1X = paddleMargin;
+p1Y = tableHei / 2;
+p1Vel = 0;
+
+// p2
+p2X = tableWid - paddleMargin;
+p2Y = tableHei / 2;
+p2Vel = 0;
+
+// Ball
+ballX = tableWid / 2;
+ballY = tableHei / 2;
+ballWid = 32;
+ballHei = 32;
+ballVX = 0;
+ballVY = 0;
+
+// Background attributes
+bgColour = c_teal;
+
+#event step Heartbeat surface
+
+if (!surface_exists(tableSurf))
+    tableSurf = surface_create(tableWid, tableHei);
+#section Game logic
+gameCtr++;
+
+switch (gameState)
+{
+    case ePONG.none:
+        // Nothing / Attraction
+        
+        break;
+        
+    case ePONG.title:
+        // Check any key and play
+        pong_title_logic();
+        break;
+    
+    case ePONG.game:
+        // Time to simulate game
+        pong_game_logic();
+        break;
+}
+
+pong_update_surface();
+
+#event draw Draw the PONG
+// Draw pong table
+var tableHalfW = tableWid / 2;
+var tableHalfH = tableHei / 2;
+var tableWorldX = tableX - tableHalfW;
+var tableWorldY = tableY - tableHalfH;
+
+fast_rect(tableWorldX + 10, tableWorldY + 10, tableWid, tableHei, $140905, 0.5); // shadow
+fast_rect(tableWorldX, tableWorldY, tableWid, tableHei, $2E2E30, 1);
+
+// Draw pong game inside of the table
+draw_surface(tableSurf, tableWorldX, tableWorldY);
+
+#section UI plz
+switch (gameState)
+{
+    case ePONG.title:
+        pong_title_ui();
+        break;
+        
+    case ePONG.game:
+        pong_game_ui();
+        break;
+}
