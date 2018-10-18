@@ -1,4 +1,4 @@
-// 2018-10-17 01:50:24
+// 2018-10-19 01:04:10
 #event create
 enum ePONG
 {
@@ -11,6 +11,18 @@ enum ePONG
 // This is the game state
 gameState = ePONG.title;
 gameCtr = 0;
+gameIntermission = 0; // Some free time counter after scoring a goal or smthn
+gameMsg = "DICC CYKA";
+p1Score = 0;
+p2Score = 0;
+
+// Camera stuff
+camOffX = 0;
+camOffY = 0;
+camRot = 0;
+camVX = 0;
+camVY = 0;
+camVRot = 0;
 
 // Play area attributes
 tableX = room_width / 2;
@@ -23,29 +35,69 @@ tableSurf = surface_create(tableWid, tableHei);
 
 // Paddles attributes
 paddleMargin = 84;
-paddleWid = 20;
-paddleLen = 80;
+paddleWid = 32;
+paddleLen = 150;
 
+enum eANIM
+{
+    offx = 0,
+    offy,
+    scalex,
+    scaley,
+    rot
+}
 // p1
 p1X = paddleMargin;
 p1Y = tableHei / 2;
 p1Vel = 0;
+p1Col = c_creme;
+p1Dash = 0; // Dash-able flag
+p1DashCtr = 10;
+p1LastMove = 0;
+// Animation
+p1Tremble = 0;
+p1Torque = 0;
+p1Anim = -1;
+p1Anim[eANIM.offx] = 0; p1Anim[eANIM.offy] = 0;
+p1Anim[eANIM.scalex] = 1; p1Anim[eANIM.scaley] = 1;
+p1Anim[eANIM.rot] = 0;
+// p1OffX = 0;
+// p1OffY = 0;
+// p1ScaleX = 0;
+// p1ScaleY = 0;
+// p1Angle = 0;
 
 // p2
 p2X = tableWid - paddleMargin;
 p2Y = tableHei / 2;
 p2Vel = 0;
+p2Col = c_creme;
+p2Dash = 0;
+p2DashCtr = 10;
+p2LastMove = 0;
+// Anim
+p2Tremble = 0;
+p2Torque = 0;
+p2Anim = -1;
+p2Anim[eANIM.offx] = 0; p2Anim[eANIM.offy] = 0;
+p2Anim[eANIM.scalex] = 1; p2Anim[eANIM.scaley] = 1;
+p2Anim[eANIM.rot] = 0;
 
 // Ball
 ballX = tableWid / 2;
 ballY = tableHei / 2;
-ballWid = 20;
-ballHei = 20;
+ballSize = 32;
 ballVX = 0;
 ballVY = 0;
+ballColliding = false;
 
 // Background attributes
 bgColour = c_teal;
+
+// Debug - dragging
+drag = false;
+dx = 0;
+dy = 0;
 
 #event step Heartbeat surface
 
@@ -72,9 +124,58 @@ switch (gameState)
         break;
 }
 
+if (mouse_check_button_pressed(mb_left))
+{
+    drag = true;
+    dx = mouse_x - (tableX - tableWid / 2);
+    dy = mouse_y - (tableY - tableHei / 2);
+}
+else if (mouse_check_button_released(mb_left))
+{
+    drag = false;
+    
+    /*
+        Apply torque
+        https://www.gamedev.net/forums/topic/289972-cross-product-of-2d-vectors/
+        
+        the crossproduct is
+        U x V = Ux*Vy-Uy*Vx
+        
+        We need torque [t] from:
+        - Impact point [r]
+        - Force vector [f]
+        
+        t = Rx * Fy - Ry * Fx
+        
+        var deltax = dx - (mouse_x - (tableX - tableWid / 2));
+        var deltay = dy - (mouse_y - (tableY - tableHei / 2));
+    
+        p1Torque = paddle_torque(p1X, p1Y, dx, dy, deltax, deltay);
+    */
+}
+
+// Update torque and anim
+pong_update_anim();
+
 pong_update_surface();
 
 #event draw Draw the PONG
+// Draw BG
+var uBGtime = shader_get_uniform(shd_background, "uTime");
+var uStripThicc = shader_get_uniform(shd_background, "uStripThicc");
+
+shader_set(shd_background);
+shader_set_uniform_f(uBGtime, gameCtr * 0.01);
+shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 10);
+
+draw_primitive_begin(pr_trianglefan);
+draw_vertex_texture(0, 0, 0, 0);
+draw_vertex_texture(room_width, 0, 1, 0);
+draw_vertex_texture(room_width, room_height, 1, 1);
+draw_vertex_texture(0, room_height, 0, 1);
+draw_primitive_end();
+shader_reset();
+
 // Draw pong table
 var tableHalfW = tableWid / 2;
 var tableHalfH = tableHei / 2;

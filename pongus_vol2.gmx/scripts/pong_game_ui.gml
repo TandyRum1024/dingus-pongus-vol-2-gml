@@ -26,5 +26,8 @@ var CENTER_X = window_get_width() / 2;
 var CENTER_Y = window_get_height() / 2;
 
 draw_set_halign(1); draw_set_valign(1);
-draw_text_transformed_colour(CENTER_X, CENTER_Y, ">> [PRESS ANY KEY YE DINK] <<", 2, 2, dsin(gameCtr * 21) * 4, $00DDFF, $00DDFF, $00DDFF, $00DDFF, 1);
+draw_text_transformed_colour(CENTER_X, CENTER_Y - 100, "DINGUS#P*O*N*G*U*S", 2, 2, dsin(gameCtr * 21) * 4, $00DDFF, $00DDFF, $00DDFF, $00DDFF, 1);
+draw_text_transformed_colour(CENTER_X + 88, CENTER_Y - 70, "VOL. 2", 2, 2, 24, $4400FF, $4400FF, $4400FF, $4400FF, 1);
+
+draw_text_transformed_colour(CENTER_X, CENTER_Y + 200, ">> [PRESS ANY KEY YE DINK] <<", 2, 2, dsin(gameCtr * 21) * 4, $00DDFF, $00DDFF, $00DDFF, $00DDFF, 1);
 draw_set_halign(0); draw_set_valign(0);

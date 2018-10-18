@@ -3,10 +3,14 @@
   <Configs name="configs">
     <Config>Configs\Default</Config>
   </Configs>
-  <NewExtensions/>
+  <NewExtensions>
+    <extension index="0">extensions\ImNotGUI</extension>
+  </NewExtensions>
   <sounds name="sound"/>
   <sprites name="sprites">
     <sprite>sprites\sprWhite</sprite>
+    <sprite>sprites\spr_uiwhitepixel</sprite>
+    <sprite>sprites\spr_uiwhitepixel1</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -15,13 +19,22 @@
     <script>scripts\pong_game_ui.gml</script>
     <script>scripts\fast_rect.gml</script>
     <script>scripts\pong_update_surface.gml</script>
+    <script>scripts\emit_msg.gml</script>
+    <script>scripts\paddle_torque.gml</script>
   </scripts>
+  <shaders name="shaders">
+    <shader type="GLSLES">shaders\shd_background.shader</shader>
+  </shaders>
   <objects name="objects">
     <object>objects\oPONG</object>
+    <object>objects\oMSG</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>
   </rooms>
+  <constants number="1">
+    <constant name="c_creme">$f2f6ff</constant>
+  </constants>
   <help>
     <rtf>help.rtf</rtf>
   </help>

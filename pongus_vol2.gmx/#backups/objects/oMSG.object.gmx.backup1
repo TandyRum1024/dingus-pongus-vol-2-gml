@@ -1,0 +1,14 @@
+// 2018-10-18 00:22:41
+#event draw
+var lifeAlpha = min(life / 30, 1);
+
+draw_set_halign(1); draw_set_valign(1);
+draw_text_transformed_colour(x, y, msg, 2, 2, 0, image_blend, image_blend, image_blend, image_blend, lifeAlpha);
+draw_set_halign(0); draw_set_valign(0);
+
+#event step
+
+if (life > 0)
+    life--;
+else
+    instance_destroy(id);
