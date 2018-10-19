@@ -44,6 +44,29 @@ tableVX *= 0.98;
 tableVY *= 0.98;
 
 
+// Handle Intensity
+////////////////////
+if (point_distance(ballVX, ballVY, 0, 0) > 10)
+    superIntense = lerp(superIntense, 1, 0.2);
+else
+    superIntense = lerp(superIntense, 0, 0.2);
+
+targetIntensity = min(targetIntensity, 10);
+
+if (boringCtr > 0)
+    boringCtr--;
+else
+{
+    targetIntensity = 0;
+    
+    if (intensity < 0.05)
+        intensity = 0;
+}
+
+intensity = lerp(intensity, targetIntensity, 0.1);
+intenseFlash *= 0.95;
+
+
 #define pong_title_logic
 if (keyboard_check_pressed(vk_anykey))
 {
@@ -235,12 +258,19 @@ if (ballVX < 0 &&
     ballX = p1X + paddleHalfWid + ballHalfSize;
     
     // Apply paddle speed
-    ballVY += p1Vel * 0.5;
+    ballVY += p1Vel * 0.15;
     
     // Vibrate
-    var ballVel = (ballVX + ballVY) * 0.34;
-    if (abs(ballVel) > 4)
+    var ballVel = abs(ballVX) + abs(ballVY) * 0.34;
+    if (ballVel > 4)
         p1Tremble = ballVel;
+        
+    // Intensify
+    targetIntensity += ballVel * 0.2;
+    boringCtr = 80;
+    
+    if (ballVel > 10)
+        intenseFlash += 0.2;
 }
 
 // P2
@@ -257,12 +287,19 @@ if (ballVX > 0 &&
     ballX = p2X - paddleHalfWid - ballHalfSize;
     
     // Apply paddle speed
-    ballVY += p2Vel * 0.5;
+    ballVY += p2Vel * 0.15;
     
     // Vibrate
-    var ballVel = (ballVX + ballVY) * 0.34;
-    if (abs(ballVel) > 4)
+    var ballVel = abs(ballVX) + abs(ballVY) * 0.34;
+    if (ballVel > 4)
         p2Tremble = ballVel;
+    
+    // Intensify
+    targetIntensity += ballVel * 0.2;
+    boringCtr = 80;
+    
+    if (ballVel > 10)
+        intenseFlash += 0.2;
 }
 
 // Handle ball bumping into wall
@@ -272,6 +309,10 @@ if (ballX + ballHalfSize > tableWid)
     ballVX *= -0.5;
     
     ballX = tableWid - ballHalfSize;
+    
+    // Intensify
+    targetIntensity += 2;
+    boringCtr = 200;
 }
 if (ballX - ballHalfSize < 0)
 {
@@ -279,6 +320,10 @@ if (ballX - ballHalfSize < 0)
     ballVX *= -0.5;
     
     ballX = ballHalfSize;
+    
+    // Intensify
+    targetIntensity += 2;
+    boringCtr = 200;
 }
 
 if (ballY + ballHalfSize > tableHei)

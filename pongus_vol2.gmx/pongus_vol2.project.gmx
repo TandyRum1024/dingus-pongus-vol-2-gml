@@ -8,6 +8,8 @@
   </NewExtensions>
   <sounds name="sound"/>
   <sprites name="sprites">
+    <sprite>sprites\sprHangul24</sprite>
+    <sprite>sprites\sprAscii24</sprite>
     <sprite>sprites\sprWhite</sprite>
     <sprite>sprites\spr_uiwhitepixel</sprite>
     <sprite>sprites\spr_uiwhitepixel1</sprite>
@@ -21,9 +23,14 @@
     <script>scripts\pong_update_surface.gml</script>
     <script>scripts\emit_msg.gml</script>
     <script>scripts\paddle_torque.gml</script>
+    <script>scripts\hj_init.gml</script>
+    <script>scripts\array.gml</script>
   </scripts>
   <shaders name="shaders">
-    <shader type="GLSLES">shaders\shd_background.shader</shader>
+    <shader type="GLSLES">shaders\shd_background_game.shader</shader>
+    <shader type="GLSLES">shaders\shd_background_title.shader</shader>
+    <shader type="GLSLES">shaders\shd_pongzone.shader</shader>
+    <shader type="GLSLES">shaders\shd_bloom.shader</shader>
   </shaders>
   <objects name="objects">
     <object>objects\oPONG</object>

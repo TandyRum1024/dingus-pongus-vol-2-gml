@@ -41,6 +41,13 @@ gameMsg = "DICC CYKA";
 p1Score = 0;
 p2Score = 0;
 
+superIntense = 0;
+intensity = 0;
+targetIntensity = 0;
+intenseFlash = 0;
+boringCtr = 0;
+
+
 // Camera stuff
 camOffX = 0;
 camOffY = 0;
@@ -57,6 +64,8 @@ tableVY = 0;
 tableWid = 800;
 tableHei = 600;
 tableSurf = surface_create(tableWid, tableHei);
+tableSurfBlur = surface_create(tableWid, tableHei);
+tableSurfFinal = surface_create(tableWid, tableHei);
 
 // Paddles attributes
 paddleMargin = 84;
@@ -118,6 +127,9 @@ ballColliding = false;
 
 // Background attributes
 bgColour = c_teal;
+
+// INIT HANGUL
+hj_init();
 </string>
           </argument>
         </arguments>
@@ -144,6 +156,12 @@ bgColour = c_teal;
 
 if (!surface_exists(tableSurf))
     tableSurf = surface_create(tableWid, tableHei);
+    
+if (!surface_exists(tableSurfFinal))
+    tableSurfFinal = surface_create(tableWid, tableHei);
+    
+if (!surface_exists(tableSurfBlur))
+    tableSurfBlur = surface_create(tableWid, tableHei);
 </string>
           </argument>
         </arguments>
@@ -212,34 +230,104 @@ pong_update_surface();
           <argument>
             <kind>1</kind>
             <string>/// Draw the PONG
-// Draw BG
-var uBGtime = shader_get_uniform(shd_background, "uTime");
-var uStripThicc = shader_get_uniform(shd_background, "uStripThicc");
 
-shader_set(shd_background);
-shader_set_uniform_f(uBGtime, gameCtr * 0.01);
-shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 10);
+switch (gameState)
+{
+    case ePONG.title:
+        // Draw BG
+        var uBGtime = shader_get_uniform(shd_background_title, "uTime");
+        var uStripThicc = shader_get_uniform(shd_background_title, "uStripThicc");
+        
+        shader_set(shd_background_title);
+        shader_set_uniform_f(uBGtime, gameCtr * 0.01);
+        shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 10);
+        
+        draw_primitive_begin(pr_trianglefan);
+        draw_vertex_texture(0, 0, 0, 0);
+        draw_vertex_texture(room_width, 0, 1, 0);
+        draw_vertex_texture(room_width, room_height, 1, 1);
+        draw_vertex_texture(0, room_height, 0, 1);
+        draw_primitive_end();
+        shader_reset();
+        break;
 
-draw_primitive_begin(pr_trianglefan);
-draw_vertex_texture(0, 0, 0, 0);
-draw_vertex_texture(room_width, 0, 1, 0);
-draw_vertex_texture(room_width, room_height, 1, 1);
-draw_vertex_texture(0, room_height, 0, 1);
-draw_primitive_end();
-shader_reset();
-
-// Draw pong table
-var tableHalfW = tableWid / 2;
-var tableHalfH = tableHei / 2;
-var tableWorldX = tableX - tableHalfW;
-var tableWorldY = tableY - tableHalfH;
-
-fast_rect(tableWorldX + 10, tableWorldY + 10, tableWid, tableHei, $140905, 0.5); // shadow
-fast_rect(tableWorldX, tableWorldY, tableWid, tableHei, $2E2E30, 1);
-
-// Draw pong game inside of the table
-draw_surface(tableSurf, tableWorldX, tableWorldY);
-
+    case ePONG.game:
+        // Draw BG
+        var uBGtime = shader_get_uniform(shd_background_game, "uTime");
+        var uIntense = shader_get_uniform(shd_background_game, "uIntensity");
+        var uFlash = shader_get_uniform(shd_background_game, "uFlash");
+        var uSuperIntense = shader_get_uniform(shd_background_game, "uSuperIntense");
+        var uStripThicc = shader_get_uniform(shd_background_game, "uStripThicc");
+        
+        shader_set(shd_background_game);
+        shader_set_uniform_f(uBGtime, gameCtr * 0.01);
+        shader_set_uniform_f(uIntense, intensity / 10);
+        shader_set_uniform_f(uFlash, intenseFlash);
+        shader_set_uniform_f(uSuperIntense, superIntense);
+        shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 7);
+        
+        draw_primitive_begin(pr_trianglefan);
+        draw_vertex_texture(0, 0, 0, 0);
+        draw_vertex_texture(room_width, 0, 1, 0);
+        draw_vertex_texture(room_width, room_height, 1, 1);
+        draw_vertex_texture(0, room_height, 0, 1);
+        draw_primitive_end();
+        shader_reset();
+    
+        // Draw pong table
+        var tableHalfW = tableWid / 2;
+        var tableHalfH = tableHei / 2;
+        var tableWorldX = tableX - tableHalfW;
+        var tableWorldY = tableY - tableHalfH;
+        
+        fast_rect(tableWorldX + 10, tableWorldY + 10, tableWid, tableHei, $140905, 0.5); // shadow
+        fast_rect(tableWorldX, tableWorldY, tableWid, tableHei, 0, 1);
+        
+        // Draw pong game inside of the table
+        uIntense = shader_get_uniform(shd_pongzone, "uIntensity");
+        uBGtime = shader_get_uniform(shd_pongzone, "uTime");
+        
+        surface_set_target(tableSurfBlur);
+        draw_clear_alpha(0,0);
+        shader_set(shd_pongzone);
+        shader_set_uniform_f(uIntense, intensity / 10);
+        shader_set_uniform_f(uBGtime, gameCtr * 0.25);
+        draw_surface(tableSurf, 0, 0);
+        shader_reset();
+        surface_reset_target();
+        
+        
+        
+        
+        surface_set_target(tableSurfFinal);
+        draw_clear_alpha(0,0);
+        var uBloom = shader_get_uniform(shd_bloom, "uBloomness");
+        var uPixelSize = shader_get_uniform(shd_bloom, "uPixelSize");
+        var uH = shader_get_uniform(shd_bloom, "uH");
+        var uV = shader_get_uniform(shd_bloom, "uV");
+        var uKernel = shader_get_uniform(shd_bloom, "uKernel");
+        shader_set(shd_bloom);
+        shader_set_uniform_f(uBloom, 1);
+        shader_set_uniform_f(uPixelSize, 1 / tableWid, 1 / tableHei);
+        shader_set_uniform_f(uH, 1);
+        shader_set_uniform_f(uV, 0);
+        shader_set_uniform_f(uKernel, 0.382928, 0.241732, 0.060598, 0.005977, 0.000229);
+        
+        draw_surface(tableSurfBlur, 0, 0);
+        shader_reset();
+        surface_reset_target();
+        
+        
+        shader_set(shd_bloom);
+        shader_set_uniform_f(uH, 0);
+        shader_set_uniform_f(uV, 1);
+        
+        draw_surface(tableSurfFinal, tableWorldX, tableWorldY);
+        shader_reset();
+        
+        //draw_surface(tableSurf, tableWorldX, tableWorldY);
+        break;
+}
 </string>
           </argument>
         </arguments>
