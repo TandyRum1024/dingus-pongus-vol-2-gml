@@ -1,9 +1,10 @@
-// 2018-10-19 01:04:42
+// 2018-10-22 07:25:53
 #event create
 enum ePONG
 {
     none = 0,
     title,
+    intermission,
     game,
     results
 }
@@ -11,18 +12,63 @@ enum ePONG
 // This is the game state
 gameState = ePONG.title;
 gameCtr = 0;
-gameIntermission = 0; // Some free time counter after scoring a goal or smthn
-gameMsg = "DICC CYKA";
 p1Score = 0;
 p2Score = 0;
+p1ScorePrev = 0;
+p2ScorePrev = 0;
+scoreSide = 0;
+
+gamePaused = false;
+
+winner = 0;
+
+quipIdx = 0;
+quips = -1;
+quips[quipIdx++] = "바보에서 벗어난걸 축하합니다" + chr(1);
+quips[quipIdx++] = "고인물 냄새가 여기까지 나네요";
+quips[quipIdx++] = "고인 물은 찝찝하잖아";
+quips[quipIdx++] = chr(2) + "아무나 " + chr(1) + " 이겨라" + chr(2);
+quips[quipIdx++] = "그걸 또 넣고\n그걸 또 내주네";
+quips[quipIdx++] = "살려줘요\n스물 네 시간동안 코딩만 했어요";
+quips[quipIdx++] = "황금같은 휴일을\n축제 준비에만 썼습니다 꺼흒\n선배분들 좀 도와주지..";
+
+// Intermission related vars
+gameIntermission = 0; // Some free time counter after scoring a goal or smthn
+intermMsg = "NO ★ U";
+intermState = 0; // Show different message in intermisison?
+intermWindup = 0; // Intermission wind up : Short Delay before intermission screen appears
+intermTableX = 0;
+intermTableY = 0;
+intermBallX = 0;
+intermBallY = 0;
+intermAnim = 0;
+intermCamX = 0;
+intermCamY = 0;
+intermCamZ = 0;
+intermCamR = 0;
+intermCamS = 0;
+
+// BG and intensity
+superIntense = 0;
+intensity = 0;
+targetIntensity = 0;
+intenseFlash = 0;
+boringCtr = 0;
+scoreIntense = 0;
+
 
 // Camera stuff
-camOffX = 0;
-camOffY = 0;
+var VIEW_W = view_wport[0];
+var VIEW_H = view_hport[0];
+camShake = 0;
+camX = VIEW_W / 2;
+camY = VIEW_H / 2;
+camZ = 1; // zoom
 camRot = 0;
 camVX = 0;
 camVY = 0;
-camVRot = 0;
+camVZ = 0;
+camVR = 0;
 
 // Play area attributes
 tableX = room_width / 2;
@@ -32,6 +78,8 @@ tableVY = 0;
 tableWid = 800;
 tableHei = 600;
 tableSurf = surface_create(tableWid, tableHei);
+tableSurfBlur = surface_create(tableWid, tableHei);
+tableSurfFinal = surface_create(tableWid, tableHei);
 
 // Paddles attributes
 paddleMargin = 84;
@@ -46,6 +94,7 @@ enum eANIM
     scaley,
     rot
 }
+
 // p1
 p1X = paddleMargin;
 p1Y = tableHei / 2;
@@ -57,6 +106,8 @@ p1LastMove = 0;
 // Animation
 p1Tremble = 0;
 p1Torque = 0;
+p1Squeeze = 0;
+p1SqueezeVel = 0;
 p1Anim = -1;
 p1Anim[eANIM.offx] = 0; p1Anim[eANIM.offy] = 0;
 p1Anim[eANIM.scalex] = 1; p1Anim[eANIM.scaley] = 1;
@@ -78,6 +129,8 @@ p2LastMove = 0;
 // Anim
 p2Tremble = 0;
 p2Torque = 0;
+p2Squeeze = 0;
+p2SqueezeVel = 0;
 p2Anim = -1;
 p2Anim[eANIM.offx] = 0; p2Anim[eANIM.offy] = 0;
 p2Anim[eANIM.scalex] = 1; p2Anim[eANIM.scaley] = 1;
@@ -93,74 +146,242 @@ ballColliding = false;
 
 // Background attributes
 bgColour = c_teal;
+bgSide = 0;
+
+dogX = 0;
+dogY = 0;
+dogVX = 0;
+dogVY = 0;
+dogSize = 42;
+
+// INIT HANGUL
+hj_init();
+
+pong_set_state(ePONG.title);
 
 #event step Heartbeat surface
 
 if (!surface_exists(tableSurf))
     tableSurf = surface_create(tableWid, tableHei);
-#section Game logic
-gameCtr++;
-
-switch (gameState)
-{
-    case ePONG.none:
-        // Nothing / Attraction
-        
-        break;
-        
-    case ePONG.title:
-        // Check any key and play
-        pong_title_logic();
-        break;
     
-    case ePONG.game:
-        // Time to simulate game
-        pong_game_logic();
-        break;
-}
+if (!surface_exists(tableSurfFinal))
+    tableSurfFinal = surface_create(tableWid, tableHei);
+    
+if (!surface_exists(tableSurfBlur))
+    tableSurfBlur = surface_create(tableWid, tableHei);
+#section Game logic
 
-// Update torque and anim
-pong_update_anim();
+if (!gamePaused)
+{
+    gameCtr++;
+    switch (gameState)
+    {
+        case ePONG.none:
+            // Nothing / Attraction
+            
+            break;
+            
+        case ePONG.title:
+            // Check any key and play
+            pong_title_logic();
+            break;
+            
+        case ePONG.intermission:
+            if (keyboard_check_pressed(vk_escape))
+                gamePaused = true;
+        
+            // Intermission : show score and message
+            pong_intermission_logic();
+            break;
+        
+        case ePONG.game:
+            if (keyboard_check_pressed(vk_escape))
+                gamePaused = true;
+        
+            // Time to simulate game
+            pong_game_logic();
+            break;
+            
+        case ePONG.results:
+            if (keyboard_check_pressed(vk_escape))
+                gamePaused = true;
+        
+            pong_result_logic();
+            break;
+    }
+    
+    // Update torque and anim
+    pong_update_anim();
+    pong_update_cam();
+}
+else
+{
+    if (keyboard_check_pressed(vk_escape))
+        gamePaused = false;
+    if (keyboard_check_pressed(ord('R')))
+    {
+        gamePaused = false;
+        pong_reset();
+        pong_set_state(ePONG.title);
+    }
+}
 
 pong_update_surface();
 
+#event other_game_end
+surface_free(tableSurf);
+surface_free(tableSurfBlur);
+surface_free(tableSurfFinal);
+
 #event draw Draw the PONG
-// Draw BG
-var uBGtime = shader_get_uniform(shd_background, "uTime");
-var uStripThicc = shader_get_uniform(shd_background, "uStripThicc");
 
-shader_set(shd_background);
-shader_set_uniform_f(uBGtime, gameCtr * 0.01);
-shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 10);
-
-draw_primitive_begin(pr_trianglefan);
-draw_vertex_texture(0, 0, 0, 0);
-draw_vertex_texture(room_width, 0, 1, 0);
-draw_vertex_texture(room_width, room_height, 1, 1);
-draw_vertex_texture(0, room_height, 0, 1);
-draw_primitive_end();
-shader_reset();
-
-// Draw pong table
-var tableHalfW = tableWid / 2;
-var tableHalfH = tableHei / 2;
-var tableWorldX = tableX - tableHalfW;
-var tableWorldY = tableY - tableHalfH;
-
-fast_rect(tableWorldX + 10, tableWorldY + 10, tableWid, tableHei, $140905, 0.5); // shadow
-fast_rect(tableWorldX, tableWorldY, tableWid, tableHei, $2E2E30, 1);
-
-// Draw pong game inside of the table
-draw_surface(tableSurf, tableWorldX, tableWorldY);
-
-#section UI plz
 switch (gameState)
 {
     case ePONG.title:
-        pong_title_ui();
-        break;
+        // Draw BG
+        var uBGtime = shader_get_uniform(shd_background_title, "uTime");
+        var uStripThicc = shader_get_uniform(shd_background_title, "uStripThicc");
         
+        shader_set(shd_background_title);
+        shader_set_uniform_f(uBGtime, gameCtr * 0.01);
+        shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 10);
+        
+        draw_primitive_begin(pr_trianglefan);
+        draw_vertex_texture(0, 0, 0, 0);
+        draw_vertex_texture(room_width, 0, 1, 0);
+        draw_vertex_texture(room_width, room_height, 1, 1);
+        draw_vertex_texture(0, room_height, 0, 1);
+        draw_primitive_end();
+        shader_reset();
+        break;
+
+    case ePONG.results:
+    case ePONG.intermission:
     case ePONG.game:
-        pong_game_ui();
+        // Draw BG
+        var uBGtime = shader_get_uniform(shd_background_game, "uTime");
+        var uIntense = shader_get_uniform(shd_background_game, "uIntensity");
+        var uFlash = shader_get_uniform(shd_background_game, "uFlash");
+        var uSuperIntense = shader_get_uniform(shd_background_game, "uSuperIntense");
+        var uStripThicc = shader_get_uniform(shd_background_game, "uStripThicc");
+        var uScore = shader_get_uniform(shd_background_game, "uScore");
+        var uSide = shader_get_uniform(shd_background_game, "uSide");
+        var uScoreBG = shader_get_uniform(shd_background_game, "uScoreBG");
+        
+        shader_set(shd_background_game);
+        shader_set_uniform_f(uBGtime, gameCtr * 0.01);
+        shader_set_uniform_f(uIntense, intensity / 10);
+        shader_set_uniform_f(uFlash, intenseFlash);
+        shader_set_uniform_f(uSuperIntense, superIntense);
+        shader_set_uniform_f(uStripThicc, sin(gameCtr * 0.01) * 3 + 7);
+        
+        shader_set_uniform_f(uScore, scoreIntense);
+        shader_set_uniform_f(uSide, scoreSide); // glitch: this fucking thing (uniform_i) doesn't work aaa fuck 
+        shader_set_uniform_f(uScoreBG, intermState);
+        
+        draw_primitive_begin(pr_trianglefan);
+        draw_vertex_texture(0, 0, 0, 0);
+        draw_vertex_texture(room_width, 0, 1, 0);
+        draw_vertex_texture(room_width, room_height, 1, 1);
+        draw_vertex_texture(0, room_height, 0, 1);
+        draw_primitive_end();
+        shader_reset();
+    
+        // Draw pong table
+        var tableHalfW = tableWid / 2;
+        var tableHalfH = tableHei / 2;
+        var tableWorldX = tableX - tableHalfW;
+        var tableWorldY = tableY - tableHalfH;
+        
+        fast_rect(tableWorldX + 10, tableWorldY + 10, tableWid, tableHei, $191819, 0.5); // shadow
+        fast_rect(tableWorldX, tableWorldY, tableWid, tableHei, $1A1B1C, 1);
+        
+        // Draw pong game inside of the table
+        uIntense = shader_get_uniform(shd_pongzone, "uIntensity");
+        uBGtime = shader_get_uniform(shd_pongzone, "uTime");
+        
+        surface_set_target(tableSurfBlur);
+        draw_clear(0);
+        shader_set(shd_pongzone);
+        shader_set_uniform_f(uIntense, intensity / 10);
+        shader_set_uniform_f(uBGtime, gameCtr * 0.25);
+        draw_surface(tableSurf, 0, 0);
+        shader_reset();
+        surface_reset_target();
+        
+        draw_surface(tableSurf, tableWorldX, tableWorldY);
+        
+        // Do blur
+        draw_set_blend_mode(bm_add);
+        
+        var uBloom = shader_get_uniform(shd_bloom, "uBloomness");
+        var uTexSize = shader_get_uniform(shd_bloom, "uTexSize");
+        var uH = shader_get_uniform(shd_bloom, "uH");
+        var uV = shader_get_uniform(shd_bloom, "uV");
+        var uKernel = shader_get_uniform(shd_bloom, "uKernel");
+        
+        surface_set_target(tableSurfFinal);
+        draw_clear_alpha(0,0);
+        shader_set(shd_bloom);
+        shader_set_uniform_f(uBloom, 1);
+        shader_set_uniform_f(uTexSize, tableWid, tableHei);
+        shader_set_uniform_f(uH, 1);
+        shader_set_uniform_f(uV, 0);
+        shader_set_uniform_f_array(uKernel, array(0.382925, 0.24173, 0.060598, 0.005977, 0.000229, 0.000003));
+        
+        draw_surface(tableSurfBlur, 0, 0);
+        
+        shader_reset();
+        surface_reset_target();
+        
+        
+        shader_set(shd_bloom);
+        shader_set_uniform_f(uH, 0);
+        shader_set_uniform_f(uV, 1);
+        
+        draw_surface(tableSurfFinal, tableWorldX, tableWorldY);
+        
+        shader_reset();
+        
+        draw_set_blend_mode(bm_normal);
         break;
 }
+#section UI plz
+
+if (gamePaused)
+{
+    draw_clear($423D3D);
+    
+    draw_set_halign(1); draw_set_valign(1);
+    draw_set_font(fntHangul64);
+    draw_text_shadow(room_width/2, room_height/2, "PAUSED", 0, 1, 1, $00DDFF, 1, 0, 4, c_thicc);
+    draw_set_font(fntGame24);
+    draw_text_shadow(room_width/2, room_height/2 + 80, "[ESC]키를 눌러서 재개, [R] 키로 RESET", 0, 1, 1, c_creme, 1, 0, 4, c_thicc);
+    draw_set_halign(0); draw_set_valign(0);
+    
+}
+else
+{
+    switch (gameState)
+    {
+        case ePONG.title:
+            pong_title_ui();
+            break;
+            
+        case ePONG.game:
+            pong_game_ui();
+            break;
+        
+        case ePONG.intermission:
+            pong_intermission_ui();
+            break;
+            
+        case ePONG.results:
+            pong_result_ui();
+            break;
+    }
+}
+
+#event draw_gui
+// draw_text(10, 10, "ZOOM : " + string(camZ));
+// draw_text(10, 50, "SCORE : " + string(scoreSide));

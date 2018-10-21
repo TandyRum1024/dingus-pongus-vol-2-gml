@@ -11,6 +11,7 @@ global.hangulAlignV = 0;
 
 // Set non-hangul font
 global.hangulAsciiFont = sprAscii24;
+global.hangulFont = sprHangul24;
 
 // BUILD HANGUL JUNGSEONG BEOL LUT
 var BEOL_OFFSET = 28;
@@ -77,7 +78,7 @@ for (var i=1; i<=strlen; i++)
         if (_utf == ord('\') && string_char_at(str, i + 1) == "n")
         {
             offX = 0;
-            offY += 25;
+            offY += global.hangulFntSize + 1;;
             
             // Recalc font width and update align
             lineWidth = hj_get_width_line(string_delete(str, 1, i + 1));
@@ -96,7 +97,7 @@ for (var i=1; i<=strlen; i++)
         }
         else
         {
-            draw_sprite_ext(sprAscii24, _utf, offX, offY, 1, 1, 0, col, alpha);
+            draw_sprite_ext(global.hangulAsciiFont, _utf, offX, offY, 1, 1, 0, col, alpha);
         }
     }
     else
@@ -111,17 +112,17 @@ for (var i=1; i<=strlen; i++)
         beolOffset = beol_lut[_jung];
         
         // Choseong
-        draw_sprite_ext(sprHangul24, beolOffset + _cho, offX, offY, 1, 1, 0, col, alpha);
+        draw_sprite_ext(global.hangulFont, beolOffset + _cho, offX, offY, 1, 1, 0, col, alpha);
         
         // Jungseong
-        draw_sprite_ext(sprHangul24, jungOffset + _jung, offX, offY, 1, 1, 0, col, alpha);
+        draw_sprite_ext(global.hangulFont, jungOffset + _jung, offX, offY, 1, 1, 0, col, alpha);
         
         // Jongseong
-        draw_sprite_ext(sprHangul24, jongOffset + beolOffset + _jong, offX, offY, 1, 1, 0, col, alpha);
+        draw_sprite_ext(global.hangulFont, jongOffset + beolOffset + _jong, offX, offY, 1, 1, 0, col, alpha);
     }
     
     // Advance
-    offX += 25;
+    offX += global.hangulFntSize + 1;
 }
 
 d3d_transform_stack_pop();

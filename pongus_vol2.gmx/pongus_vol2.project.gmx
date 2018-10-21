@@ -9,14 +9,20 @@
   <sounds name="sound"/>
   <sprites name="sprites">
     <sprite>sprites\sprHangul24</sprite>
+    <sprite>sprites\sprHangul48</sprite>
     <sprite>sprites\sprAscii24</sprite>
+    <sprite>sprites\sprAscii48</sprite>
     <sprite>sprites\sprWhite</sprite>
     <sprite>sprites\spr_uiwhitepixel</sprite>
     <sprite>sprites\spr_uiwhitepixel1</sprite>
+    <sprite>sprites\sprParticle16</sprite>
+    <sprite>sprites\sprVictm</sprite>
+    <sprite>sprites\sprLogo</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
   <scripts name="scripts">
+    <script>scripts\pong_camera_shake.gml</script>
     <script>scripts\pong_game_logic.gml</script>
     <script>scripts\pong_game_ui.gml</script>
     <script>scripts\fast_rect.gml</script>
@@ -25,6 +31,10 @@
     <script>scripts\paddle_torque.gml</script>
     <script>scripts\hj_init.gml</script>
     <script>scripts\array.gml</script>
+    <script>scripts\pong_set_state.gml</script>
+    <script>scripts\smoothstep.gml</script>
+    <script>scripts\draw_text_shadow.gml</script>
+    <script>scripts\particle_add.gml</script>
   </scripts>
   <shaders name="shaders">
     <shader type="GLSLES">shaders\shd_background_game.shader</shader>
@@ -32,15 +42,27 @@
     <shader type="GLSLES">shaders\shd_pongzone.shader</shader>
     <shader type="GLSLES">shaders\shd_bloom.shader</shader>
   </shaders>
+  <fonts name="fonts">
+    <font>fonts\fntHangul64</font>
+    <font>fonts\fntGame24</font>
+  </fonts>
   <objects name="objects">
     <object>objects\oPONG</object>
     <object>objects\oMSG</object>
+    <object>objects\oPART</object>
+    <object>objects\object3</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>
   </rooms>
-  <constants number="1">
+  <constants number="7">
     <constant name="c_creme">$f2f6ff</constant>
+    <constant name="c_thicc">$212123</constant>
+    <constant name="INTERM_ANIM_DURATION">30</constant>
+    <constant name="INTERM_WINDUP_DURATION">8</constant>
+    <constant name="PT_PADDLE_SWOOCE_LIFE">20</constant>
+    <constant name="PT_PADDLE_HIT_LIFE">20</constant>
+    <constant name="PT_MAX_SIZE">512</constant>
   </constants>
   <help>
     <rtf>help.rtf</rtf>

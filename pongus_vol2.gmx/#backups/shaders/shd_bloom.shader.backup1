@@ -1,0 +1,83 @@
+// 2018-10-21 14:28:05
+//
+// Simple passthrough vertex shader
+//
+attribute vec3 in_Position;                  // (x,y,z)
+//attribute vec3 in_Normal;                  // (x,y,z)     unused in this shader.	
+attribute vec4 in_Colour;                    // (r,g,b,a)
+attribute vec2 in_TextureCoord;              // (u,v)
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main()
+{
+    vec4 object_space_pos = vec4( in_Position.x, in_Position.y, in_Position.z, 1.0);
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * object_space_pos;
+    
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+
+//######################_==_YOYO_SHADER_MARKER_==_######################@~//
+// Simple passthrough fragment shader
+//
+#define quality 5.0
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform float uBloomness;
+uniform vec2 uTexSize;
+uniform float uKernel[6];
+
+uniform float uH;
+uniform float uV;
+
+float rng(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+void main()
+{
+    // gl_FragColor = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord );
+    vec2 noiseOff = (vec2(rng(v_vTexcoord.xy), rng(v_vTexcoord.yx)) - 0.5) * 0.014;
+    vec4 originalTex = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord + noiseOff);
+    
+    vec2 unit = vec2(1.0) / uTexSize.xy;
+    vec3 sum = originalTex.rgb * uKernel[0];
+    
+    float noiseSize = 1.0;
+    for (int i=1; i<6; i++)
+    {
+        float offDist = pow(float(i), 2.0);
+        vec2 offset = vec2(unit.x * uH, unit.y * uV) * offDist;
+        vec2 noiseOff = (vec2(rng(v_vTexcoord + offset), rng(v_vTexcoord - offset)) - 0.5);
+        
+        offset += noiseOff * 0.014 * noiseSize * (float(i));
+        
+        offDist += length(noiseOff);
+        
+        vec3 samp = texture2D( gm_BaseTexture, v_vTexcoord + offset).rgb * uKernel[i];
+        samp.r /= offDist;
+        samp.g /= offDist;
+        sum += samp;
+        
+        samp = texture2D( gm_BaseTexture, v_vTexcoord - offset).rgb * uKernel[i];
+        samp.g /= offDist;
+        samp.b /= offDist;
+        sum += samp;
+    }
+    
+    // Set blur w/ bloom tint
+    vec3 bloomTint = vec3(0.98, 0.94, 0.86);
+    sum *= bloomTint;
+    
+    // Add original picture to complete bloom
+    // vec4 finished = originalTex + vec4(sum, 1.0);
+    // finished /= 2.0;
+    vec4 finished = vec4(sum, 1.0);
+    
+    gl_FragColor = finished;
+}
+

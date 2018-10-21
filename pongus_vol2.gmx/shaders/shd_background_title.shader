@@ -2,7 +2,7 @@
 // Simple passthrough vertex shader
 //
 attribute vec3 in_Position;                  // (x,y,z)
-//attribute vec3 in_Normal;                  // (x,y,z)     unused in this shader.	
+//attribute vec3 in_Normal;                  // (x,y,z)     unused in this shader.
 attribute vec4 in_Colour;                    // (r,g,b,a)
 attribute vec2 in_TextureCoord;              // (u,v)
 
@@ -34,6 +34,28 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+vec3 xortex (vec2 uv, float time)
+{
+    vec3 last = vec3(0.0);
+    
+    vec2 rad = vec2(sin(10.0 + time * 0.01 + cos(time + 12.3)) * 0.2 + 0.5, cos(42.3 + time * 0.01 + sin(time)) * 0.2 + 0.5);
+    vec2 radDelta = uv.xy - rad.xy;
+    
+    float ux = (atan(radDelta.y, radDelta.x) * 4.0 + time * 6.0 + 3.14) / (2.0 * 3.14);
+    float uy = (length(radDelta) * 4.0);
+    
+    float round = mix(0.0, 1.0, floor(fract(uy + ux + 0.5) + 0.5));
+    
+    vec3 r1 = hsv2rgb(vec3(fract(uy * 0.08 + time * 0.1), 0.5, 0.3));
+    vec3 r2 = hsv2rgb(vec3(fract(uy * 0.05 + time * 0.1 + 0.042), 0.7, 0.5));
+    
+    last = mix(r1, r2, round);
+    
+    last *= 1.0 + sin(uy * 2.0) * 0.2 + sin(time * 0.1) * 0.5;
+    last *= min(uy, 1.0);
+    return last;
+}
+
 void main()
 {
     vec2 uv = v_vTexcoord;
@@ -50,7 +72,7 @@ void main()
     uv.y += cos(uv.x * 4.2 - 42.0 + uTime) * 0.25;
     
     // Make stripe
-    finalColour = mix(strip1, strip2, floor(fract(uv.y * uStripThicc + uTime) + 0.5));
+    finalColour = xortex(uv, uTime);//mix(strip1, strip2, floor(fract(uv.y * uStripThicc + uTime) + 0.5));
     
     gl_FragColor = vec4(finalColour, 1.0);
 }

@@ -63,17 +63,55 @@ p2Anim[eANIM.rot] += p2Torque;
 p1Torque *= 0.65;
 p2Torque *= 0.65;
 
-
 // Update squeeze
-p1Anim[eANIM.scalex] = lerp(p1Anim[eANIM.scalex], 1, 0.45);
-p1Anim[eANIM.scaley] = lerp(p1Anim[eANIM.scaley], 1, 0.45);
-p2Anim[eANIM.scalex] = lerp(p2Anim[eANIM.scalex], 1, 0.45);
-p2Anim[eANIM.scaley] = lerp(p2Anim[eANIM.scaley], 1, 0.45);
+p1SqueezeVel -= p1Squeeze * 0.45;
+p1SqueezeVel *= 0.65;
+p1Squeeze += p1SqueezeVel;
+p1Anim[eANIM.scalex] = 1 - p1Squeeze;
+p1Anim[eANIM.scaley] = 1 + p1Squeeze;
+
+p2SqueezeVel -= p2Squeeze * 0.45;
+p2SqueezeVel *= 0.65;
+p2Squeeze += p2SqueezeVel;
+p2Anim[eANIM.scalex] = 1 - p2Squeeze;
+p2Anim[eANIM.scaley] = 1 + p2Squeeze;
+
+p1Anim[eANIM.offx] = lerp(p1Anim[eANIM.offx], 0, 0.45);
+p1Anim[eANIM.offy] = lerp(p1Anim[eANIM.offy], 0, 0.45);
+p2Anim[eANIM.offx] = lerp(p2Anim[eANIM.offx], 0, 0.45);
+p2Anim[eANIM.offy] = lerp(p2Anim[eANIM.offy], 0, 0.45);
 
 p1Tremble *= 0.75;
 p2Tremble *= 0.75;
 
 #define pong_update_cam
+var VIEW_W = room_width;
+var VIEW_H = room_height;
 
-camVelX = 0;
-camVelY = 0;
+camVX += (VIEW_W / 2 - camX) * 0.45;
+camVY += (VIEW_H / 2 - camY) * 0.45;
+camVZ += (1 - camZ) * 0.45;
+camVR -= camRot * 0.75;
+
+camVX *= 0.65;
+camVY *= 0.65;
+camVZ *= 0.65;
+camVR *= 0.65;
+camShake *= 0.65;
+
+camX += camVX;
+camY += camVY;
+camZ += camVZ;
+camRot += camVR;
+
+// Apply view
+VIEW_W *= camZ;
+VIEW_H *= camZ;
+
+view_xview[0] = camX - (VIEW_W / 2) + random_range(-camShake, camShake);
+view_yview[0] = camY - (VIEW_H / 2) + random_range(-camShake, camShake);
+
+view_wview[0] = VIEW_W;
+view_hview[0] = VIEW_H;
+
+view_angle[0] = camRot;

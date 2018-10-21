@@ -27,32 +27,56 @@ varying vec2 v_vTexcoord;
 varying vec4 v_vColour;
 
 uniform float uBloomness;
-uniform vec2 uPixelSize;
-uniform float uKernel[5];
+uniform vec2 uTexSize;
+uniform float uKernel[6];
 
 uniform float uH;
 uniform float uV;
 
-float rand(vec2 co){
+float rng(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
 void main()
 {
     // gl_FragColor = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord );
+    vec2 noiseOff = (vec2(rng(v_vTexcoord.xy), rng(v_vTexcoord.yx)) - 0.5) * 0.014;
+    vec4 originalTex = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord + noiseOff);
     
-    //vec4 bloomTint = vec4(0.9, 0.85, 0.8, 1.0);
-    vec4 sum = texture2D( gm_BaseTexture, v_vTexcoord) * uKernel[0];
-    float scale = 1;
-    for (int i=1; i<5; i++)
+    vec2 unit = vec2(1.0) / uTexSize.xy;
+    vec3 sum = originalTex.rgb * uKernel[0];
+    
+    float noiseSize = 1.0;
+    for (int i=1; i<6; i++)
     {
-        vec2 offset = vec2(uPixelSize.x * float(i) * uH, uPixelSize.y * float(i) * uV);
-        // offset += (vec2(rand(v_vTexcoord + offset), rand(v_vTexcoord - offset)) - 0.5) * 0.005 * scale;
+        float offDist = pow(float(i), 2.0);
+        vec2 offset = vec2(unit.x * uH, unit.y * uV) * offDist;
+        vec2 noiseOff = (vec2(rng(v_vTexcoord + offset), rng(v_vTexcoord - offset)) - 0.5);
         
-        sum += texture2D( gm_BaseTexture, v_vTexcoord + offset) * uKernel[i];
-        sum += texture2D( gm_BaseTexture, v_vTexcoord - offset) * uKernel[i];
+        offset += noiseOff * 0.014 * noiseSize * (float(i));
+        
+        offDist += length(noiseOff);
+        
+        vec3 samp = texture2D( gm_BaseTexture, v_vTexcoord + offset).rgb * uKernel[i];
+        samp.r /= offDist;
+        samp.g /= offDist;
+        sum += samp;
+        
+        samp = texture2D( gm_BaseTexture, v_vTexcoord - offset).rgb * uKernel[i];
+        samp.g /= offDist;
+        samp.b /= offDist;
+        sum += samp;
     }
     
-    gl_FragColor = sum;
+    // Set blur w/ bloom tint
+    vec3 bloomTint = vec3(0.98, 0.94, 0.86);
+    sum *= bloomTint;
+    
+    // Add original picture to complete bloom
+    // vec4 finished = originalTex + vec4(sum, 1.0);
+    // finished /= 2.0;
+    vec4 finished = vec4(sum, 1.0);
+    
+    gl_FragColor = finished;
 }
 

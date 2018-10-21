@@ -1,0 +1,8 @@
+// 2018-10-21 23:43:16
+#macro c_creme $f2f6ff
+#macro c_thicc $212123
+#macro INTERM_ANIM_DURATION 30
+#macro INTERM_WINDUP_DURATION 8
+#macro PT_PADDLE_SWOOCE_LIFE 20
+#macro PT_PADDLE_HIT_LIFE 20
+#macro PT_MAX_SIZE 512

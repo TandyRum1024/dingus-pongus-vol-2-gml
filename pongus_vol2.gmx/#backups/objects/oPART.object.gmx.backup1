@@ -1,0 +1,150 @@
+// 2018-10-22 02:04:09
+#event create
+enum ePTYPE
+{
+    UNUSED = 0,
+    PADDLE_SWOOCE,
+    PADDLE_HIT,
+    BALL_TRAIL,
+    YEAH,
+    SIZE
+}
+enum ePART
+{
+    TYPE,
+    X,
+    Y,
+    VX,
+    VY,
+    WID,
+    HEI,
+    ROT,
+    COL,
+    ALPHA,
+    LIFE,
+    SIZE
+}
+
+particles = ds_grid_create(ePART.SIZE, PT_MAX_SIZE);
+particleIdx = 0;
+
+#event step update particles
+
+for (var i=0; i<PT_MAX_SIZE; i++)
+{
+    var plife = particles[# ePART.LIFE, i];
+    
+    switch (particles[# ePART.TYPE, i])
+    {
+        case ePTYPE.UNUSED:
+            continue;
+            break;
+            
+        case ePTYPE.PADDLE_HIT:
+            if (plife > 0)
+            {
+                particles[# ePART.LIFE, i]--;
+                
+                if (plife > PT_PADDLE_HIT_LIFE * 0.95)
+                {
+                    var offset = PT_PADDLE_HIT_LIFE * 0.95;
+                    var pTime = power(1 - smoothstep((plife - offset) / (PT_PADDLE_HIT_LIFE - offset)), 2);
+                    
+                    particles[# ePART.WID, i] = lerp(0, oPONG.paddleWid * 2, pTime);
+                    particles[# ePART.HEI, i] = oPONG.paddleWid;
+                }
+                else if (plife < PT_PADDLE_HIT_LIFE * 0.4)
+                {
+                    var pTime = power(1 - smoothstep(plife / (PT_PADDLE_HIT_LIFE * 0.4)), 2);
+                    
+                    particles[# ePART.WID, i] = lerp(oPONG.paddleWid * 2, 0, pTime);
+                    particles[# ePART.HEI, i] = oPONG.paddleWid;
+                }
+                else
+                {
+                    particles[# ePART.WID, i] = oPONG.paddleWid * 2;
+                    particles[# ePART.HEI, i] = oPONG.paddleWid;
+                }
+                
+                particles[# ePART.COL, i] = make_colour_hsv(plife * 15 + i * 10, 200, 255);
+                
+                particles[# ePART.X, i] += particles[# ePART.VX, i];
+                particles[# ePART.Y, i] += particles[# ePART.VY, i];
+                
+                particles[# ePART.VX, i] *= 0.85;
+                particles[# ePART.VY, i] *= 0.85;
+            }
+            else
+                particles[# ePART.TYPE, i] = ePTYPE.UNUSED;
+            break;
+        
+        case ePTYPE.BALL_TRAIL:
+            if (plife > 0)
+            {
+                particles[# ePART.LIFE, i]--;
+                
+                particles[# ePART.WID, i] *= 0.95;
+                particles[# ePART.HEI, i] *= 0.95;
+                
+                if (plife < 5)
+                    particles[# ePART.ALPHA, i] = lerp(particles[# ePART.ALPHA, i], 0, 0.2);
+                
+                particles[# ePART.X, i] += particles[# ePART.VX, i];
+                particles[# ePART.Y, i] += particles[# ePART.VY, i];
+                
+                particles[# ePART.VX, i] *= 0.55;
+                particles[# ePART.VY, i] *= 0.55;
+            }
+            else
+                particles[# ePART.TYPE, i] = ePTYPE.UNUSED;
+            break;
+        
+        case ePTYPE.PADDLE_SWOOCE:
+            if (plife > 0)
+            {
+                particles[# ePART.LIFE, i]--;
+                
+                var pTime = power(1 - smoothstep(plife / PT_PADDLE_SWOOCE_LIFE), 2);
+                particles[# ePART.WID, i] = lerp(oPONG.paddleWid, oPONG.paddleWid * 3, pTime);
+                particles[# ePART.HEI, i] = lerp(32, 0, pTime);
+                particles[# ePART.ALPHA, i] = lerp(1, 0, pTime);
+                
+                particles[# ePART.Y, i] += particles[# ePART.VY, i];
+                particles[# ePART.VY, i] *= 0.65;
+            }
+            else
+                particles[# ePART.TYPE, i] = ePTYPE.UNUSED;
+            break;
+    }
+}
+
+
+#event draw_begin
+// Draw particles
+
+surface_set_target(oPONG.tableSurf);
+draw_set_blend_mode(bm_add);
+
+for (var i=0; i<PT_MAX_SIZE; i++)
+{
+    switch (particles[# ePART.TYPE, i])
+    {
+        case ePTYPE.UNUSED:
+            continue;
+            break;
+            
+        case ePTYPE.BALL_TRAIL:
+            draw_sprite_ext(sprParticle16, 2, particles[# ePART.X, i], particles[# ePART.Y, i], particles[# ePART.WID, i], particles[# ePART.HEI, i], particles[# ePART.ROT, i], particles[# ePART.COL, i], particles[# ePART.ALPHA, i]);
+            break;
+            
+        case ePTYPE.PADDLE_HIT:
+            fast_rect_rot_center(particles[# ePART.X, i], particles[# ePART.Y, i], particles[# ePART.WID, i], particles[# ePART.HEI, i], particles[# ePART.COL, i], particles[# ePART.ALPHA, i], particles[# ePART.ROT, i]);
+            break;
+        
+        case ePTYPE.PADDLE_SWOOCE:
+            fast_rect_rot_center(particles[# ePART.X, i], particles[# ePART.Y, i], particles[# ePART.WID, i], particles[# ePART.HEI, i], particles[# ePART.COL, i], particles[# ePART.ALPHA, i], 0);
+            break;
+    }
+}
+draw_set_blend_mode(bm_normal);
+surface_reset_target();

@@ -6,3 +6,5 @@ msg.vy = argument6;
 msg.msg = argument0;
 msg.image_blend = argument1;
 msg.life = argument2;
+
+return msg;

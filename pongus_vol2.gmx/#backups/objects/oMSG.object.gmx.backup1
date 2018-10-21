@@ -1,10 +1,8 @@
-// 2018-10-18 00:22:41
-#event draw
-var lifeAlpha = min(life / 30, 1);
-
-draw_set_halign(1); draw_set_valign(1);
-draw_text_transformed_colour(x, y, msg, 2, 2, 0, image_blend, image_blend, image_blend, image_blend, lifeAlpha);
-draw_set_halign(0); draw_set_valign(0);
+// 2018-10-22 06:24:19
+#event create
+vx = 0;
+vy = 0;
+msg = 0;
 
 #event step
 
@@ -12,3 +10,23 @@ if (life > 0)
     life--;
 else
     instance_destroy(id);
+    
+image_blend = make_colour_hsv(life * 10, 255, 255);
+    
+x += vx;
+y += vy;
+
+#event draw
+var lifeAlpha = image_angle * min(life / 30, 1);
+
+// draw_set_halign(1); draw_set_valign(1);
+// draw_text_transformed_colour(x, y, msg, 2, 2, image_angle, image_blend, image_blend, image_blend, image_blend, lifeAlpha);
+// draw_set_halign(0); draw_set_valign(0);
+
+global.hangulFntSize = 24;
+global.hangulFont = sprHangul24;
+global.hangulAlignH = 1; global.hangulAlignV = 1;
+hj_draw(x, y, string(msg), image_blend, lifeAlpha, image_angle);
+global.hangulAlignH = 0; global.hangulAlignV = 0;
+global.hangulFntSize = 24;
+global.hangulFont = sprHangul24;

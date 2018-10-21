@@ -29,6 +29,9 @@ uniform float uIntensity; // 0 ~ 1
 uniform float uFlash; // 0 ~ 1
 uniform float uStripThicc;
 uniform float uSuperIntense;
+uniform float uScore;
+uniform int uSide; // Winner's colour for intense stripe
+uniform float uScoreBG; // Show stripes and stuff?
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -39,14 +42,37 @@ vec3 hsv2rgb(vec3 c)
 
 vec3 rad_intense_BG (vec2 uv, float time, float thickness)
 {
-    
-
     // Distort UV so that we got some RAD swirly effect
     uv.x += sin(uv.y * 2.4 + 42.0 - time) * 0.25;
     uv.y += cos(uv.x * 4.2 - 42.0 + time) * 0.25;
     
     // Make stripe
     return mix(hsv2rgb(vec3(fract(time * 0.1), 0.8, 1)), hsv2rgb(vec3(fract(time * 0.1 + 0.042), 0.75, 0.8)), floor(fract(uv.y * thickness + time) + 0.5));
+}
+
+vec3 rad_winner_bg (vec2 uv, int side, float time, float thickness)
+{
+    vec3 col1 = vec3(1.0);
+    vec3 col2 = vec3(0.0);
+    
+    // Rotate uv?
+    uv.x += sin(time) * 0.6;
+    
+    if (side > 0) // Red team / Right side
+    {
+        col1 = vec3(244.0, 66.0, 86.0) / 255.0;
+        col2 = vec3(252.0, 221.0, 118.0) / 255.0;
+    }
+    else // Blu team / other side
+    {
+        col1 = vec3(33.0, 255.0, 188.0) / 255.0;
+        col2 = vec3(110.0, 76.0, 224.0) / 255.0;
+    }
+    
+    // Make stripe
+    vec3 bgCol = mix(col1, col2, floor(fract(uv.y * thickness + time) + 0.5));
+    
+    return bgCol;
 }
 
 void main()
@@ -64,8 +90,16 @@ void main()
     // SUPERINTENSEMODE
     finalColour = mix(finalColour, rad_intense_BG(uv, uTime, uStripThicc), uSuperIntense);
     
+    // WINNER!!!
+    if (uScoreBG > 0.5)
+        finalColour = mix(finalColour, rad_winner_bg(uv, uSide, uTime * 5.0, uStripThicc), uScore);
+
     // Intense Flash
-    finalColour = mix(finalColour, intenseFlash, uFlash);
+    // Side flashe
+    // finalColour += vec3(40.0, 26.0, 224.0) / 255.0 * ((1.0 - float(uSide)) * uFlash); // p1
+    // finalColour += vec3(244.0, 0, 0) / 255.0 * (float(uSide) * uFlash); // p2
+    finalColour = mix(finalColour, vec3(40.0, 26.0, 224.0) / 255.0, ((1.0 - uv.x) * (1.0 - float(uSide)) * uFlash));
+    finalColour = mix(finalColour, vec3(244.0, 26.0, 42.0) / 255.0, (uv.x * float(uSide) * uFlash));
     
     gl_FragColor = vec4(finalColour, 1.0);
 }

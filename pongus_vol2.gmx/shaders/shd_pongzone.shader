@@ -44,20 +44,27 @@ mat2 rotate2d(float _angle)
 
 void main()
 {
-    vec4 finalColour = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord );
+    vec4 finalColour = vec4(0.0); //v_vColour * texture2D( gm_BaseTexture, v_vTexcoord );
     
     for (float i=1.0; i<iteration; i+=1.0)
     {
-        float angle = 2.0 * 3.14 * ((i * 8.0) / 360.0);
+        float angle = radians((i * 0.5) + sin(uTime * 0.1) * 4.0 * (i * 0.5));
         vec2 zoomUV = (v_vTexcoord - 0.5);
-        
         zoomUV *= rotate2d(angle);
         
-        zoomUV = (zoomUV * (sin(uTime * 0.042) * 0.5 + 1.0) * max(i * uIntensity, 1.0)) + 0.5;
+        zoomUV = (zoomUV * (sin(uTime * 0.062) * 0.32 * uIntensity + 1.0) * max(i * uIntensity, 1.0)) + 0.5;
         
         if (zoomUV.x > 0.0 && zoomUV.x < 1.0 &&
             zoomUV.y > 0.0 && zoomUV.y < 1.0)
-            finalColour += vec4(hsv2rgb(vec3(i / iteration + uTime, 0.8, 0.5)), 1.0) * texture2D( gm_BaseTexture, zoomUV ) * ((iteration - i) * 0.5 / iteration * uIntensity) + vec4(0.04, 0.065, 0.08, 0.02);
+        {
+            vec4 tint = vec4(hsv2rgb(vec3(i / iteration + uTime * 0.01, 0.8, 0.64)), 1.0);
+            tint *= texture2D( gm_BaseTexture, zoomUV );
+            
+            tint.a *= (1.0 - (i / iteration)) * 0.42;
+            
+            finalColour.rgb += (tint.rgb * tint.a) + vec3(0.01, 0.015, 0.02) * uIntensity;
+            finalColour.a = 1.0;
+        }
     }
     
     gl_FragColor = finalColour;
